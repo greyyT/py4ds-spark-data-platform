@@ -201,9 +201,10 @@ class IMDBScraper(Scraper):
             budget_block = movie_soup.find(
                 "li", attrs={"data-testid": "title-boxoffice-budget"}
             )
-            budget = budget_block.find(
-                "span", class_="ipc-metadata-list-item__content-container"
-            ).text
+            budget_value_box = budget_block.find(
+                "div", class_="ipc-metadata-list-item__content-container"
+            )
+            budget = budget_value_box.find("span").text
         except AttributeError:
             self.logger.warning(f"Budget not found")
             budget = None
@@ -219,7 +220,7 @@ class IMDBScraper(Scraper):
         self.logger.debug("Getting global gross from movie page")
         try:
             global_gross_block = movie_soup.find(
-                "li", attrs={"data-testid": "title-boxoffice-cumulativeworldwidegross"}
+                "li", {"data-testid": "title-boxoffice-cumulativeworldwidegross"}
             )
             gross = global_gross_block.find(
                 "span", class_="ipc-metadata-list-item__list-content-item"
@@ -265,6 +266,21 @@ class IMDBScraper(Scraper):
 
         return year
 
+    def scrape_overview(self, movie_soup):
+        # Get the overview
+        self.logger.debug("Getting overview from movie page")
+        try:
+            overview_block = movie_soup.find(
+                "p", { "data-testid": "plot" }
+            )
+            overview = overview_block.find_all("span")[0].text
+        except:
+            self.logger.warning(f"Overview not found")
+            overview = None
+        self.logger.info(f"Adding overview: {overview}")
+
+        return overview
+
     def scrape_movie(self, link, movie_soup):
         score = self.scrape_score(movie_soup)
         title = self.scrape_title(movie_soup)
@@ -276,6 +292,7 @@ class IMDBScraper(Scraper):
         budget = self.scrape_budget(movie_soup)
         global_gross = self.scrape_gross(movie_soup)
         year = self.scrape_year(movie_soup)
+        overview = self.scrape_overview(movie_soup)
         
         new_row = {
             'score': score,
@@ -293,6 +310,7 @@ class IMDBScraper(Scraper):
             'budget': budget,
             'global_gross': global_gross,
             'year': year,
+            'overview': overview,
             'link': link
         }
         
