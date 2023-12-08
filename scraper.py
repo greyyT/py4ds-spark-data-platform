@@ -1,6 +1,5 @@
-from abc import abstractmethod
-
 import pandas as pd
+import csv
 
 import re, logging
 
@@ -13,24 +12,7 @@ class Scraper:
         self.site_url = url
         self.headers = headers
         self.link = link
-        
-        self.SCRAPPERS = {}
 
-    @classmethod
-    def register_scraper(cls, scraper_type):
-        def decorator(fn):
-            cls.SCRAPPERS[scraper_type] = fn
-            return fn
-        return decorator
-
-    def get_scraper(self, scraper_type):
-        if (scraper_type not in self.SCRAPPERS):
-            raise ValueError(f"Unsupported scraper type: {scraper_type}")
-        return self.SCRAPPERS[scraper_type]
-
-    @abstractmethod
-    def verify_lengths(self):
-        pass
 
 class IMDBScraper(Scraper):
     HEADERS = {
@@ -54,31 +36,15 @@ class IMDBScraper(Scraper):
         self.logger = LOGGER
 
         self.list_movies = []
-
-        self.all_scores = []
-        self.all_titles = []
-        self.all_durations = []
-        self.all_director_names = []
-        self.all_actor_1_names = []
-        self.all_actor_2_names = []
-        self.all_actor_3_names = []
-        self.all_reviewed_users = []
-        self.all_reviewed_critics = []
-        self.all_num_votes = []
-        self.all_metascores = []
-        self.all_links = []
-        self.all_languages = []
-        self.all_budgets = []
-        self.all_global_grosses = []
-        self.all_years = []
+        
+        self.movies_data = []
 
     def register_scraper(scraper_type):
         return super().register_scraper(scraper_type)
 
     def get_scraper(self, scraper_type):
         return super().get_scraper(scraper_type)
-    
-    @register_scraper('score')
+
     def scrape_score(self, movie_soup):
         # Get the score
         self.logger.debug("Getting score from movie page")
@@ -95,10 +61,10 @@ class IMDBScraper(Scraper):
         except Exception as e:
             self.logger.exception(f"Exception: {e}")
             score = None
-        self.all_scores.append(score)
         self.logger.info(f"Added score successfully: {score}")
 
-    @register_scraper('title')
+        return score
+
     def scrape_title(self, movie_soup):
         # Get the title
         self.logger.debug("Getting title from movie page")
@@ -107,10 +73,10 @@ class IMDBScraper(Scraper):
         except Exception as e:
             self.logger.exception(f"Exception: {e}")
             title = None
-        self.all_titles.append(title)
         self.logger.info(f"Adding title: {title}")
 
-    @register_scraper('duration')
+        return title
+
     def scrape_duration(self, movie_soup):
         # Get the duration
         self.logger.debug("Getting duration from movie page")
@@ -126,10 +92,10 @@ class IMDBScraper(Scraper):
         except Exception as e:
             self.logger.exception(f"Exception: {e}")
             duration = None
-        self.all_durations.append(duration)
         self.logger.info(f"Adding duration: {duration}")
 
-    @register_scraper('contributors')
+        return duration
+
     def scrape_contributors(self, movie_soup):
         # Get the director, actor 1, actor 2, actor 3 names
         self.logger.debug("Getting director and actor names from movie page")
@@ -156,16 +122,13 @@ class IMDBScraper(Scraper):
                     actor_3_name = block.find_all("a")[3].text
         except Exception as e:
             self.logger.exception(f"Exception: {e}")
-        self.all_director_names.append(director_name)
         self.logger.info(f"Adding director name: {director_name}")
-        self.all_actor_1_names.append(actor_1_name)
         self.logger.info(f"Adding actor 1 name: {actor_1_name}")
-        self.all_actor_2_names.append(actor_2_name)
         self.logger.info(f"Adding actor 2 name: {actor_2_name}")
-        self.all_actor_3_names.append(actor_3_name)
         self.logger.info(f"Adding actor 3 name: {actor_3_name}")
 
-    @register_scraper('reviews')
+        return director_name, actor_1_name, actor_2_name, actor_3_name
+
     def scrape_reviews(self, movie_soup):
         # Get the number of reviewed users, number of reviewed critics, metascore
         self.logger.debug("Getting number of reviewed users, number of reviewed critics, metascore from movie page")
@@ -190,14 +153,12 @@ class IMDBScraper(Scraper):
                     metascore = block.find("span", class_="score").text
         except Exception as e:
             self.logger.exception(f"Exception: {e}")
-        self.all_reviewed_users.append(num_reviews)
         self.logger.info(f"Adding number of reviewed users: {num_reviews}")
-        self.all_reviewed_critics.append(num_critics)
         self.logger.info(f"Adding number of reviewed critics: {num_critics}")
-        self.all_metascores.append(metascore)
         self.logger.info(f"Adding metascore: {metascore}")
 
-    @register_scraper('votes')
+        return num_reviews, num_critics, metascore
+
     def scrape_votes(self, movie_soup):
         # Get the number of votes
         self.logger.debug("Getting number of votes from movie page")
@@ -214,10 +175,10 @@ class IMDBScraper(Scraper):
         except Exception as e:
             self.logger.exception(f"Exception: {e}")
             num_votes = None
-        self.all_num_votes.append(num_votes)
         self.logger.info(f"Adding number of votes: {num_votes}")
 
-    @register_scraper('language')
+        return num_votes
+
     def scrape_language(self, movie_soup):
         # Get the language
         self.logger.debug("Getting language from movie page")
@@ -229,10 +190,10 @@ class IMDBScraper(Scraper):
         except Exception as e:
             self.logger.exception(f"Exception: {e}")
             language = None
-        self.all_languages.append(language)
         self.logger.info(f"Adding language: {language}")
 
-    @register_scraper('budget')
+        return language
+
     def scrape_budget(self, movie_soup):
         # Get the budget
         self.logger.debug("Getting budget from movie page")
@@ -249,10 +210,10 @@ class IMDBScraper(Scraper):
         except Exception as e:
             self.logger.exception(f"Exception: {e}")
             budget = None
-        self.all_budgets.append(budget)
         self.logger.info(f"Adding budget: {budget}")
 
-    @register_scraper('gross')
+        return budget
+
     def scrape_gross(self, movie_soup):
         # Get the global gross
         self.logger.debug("Getting global gross from movie page")
@@ -270,9 +231,9 @@ class IMDBScraper(Scraper):
             self.logger.exception(f"Exception: {e}")
             gross = None
         self.logger.info(f"Adding global gross: {gross}")
-        self.all_global_grosses.append(gross)
 
-    @register_scraper('year')
+        return gross
+
     def scrape_year(self, movie_soup):
         # Get the year
         self.logger.debug("Getting year from movie page")
@@ -300,112 +261,115 @@ class IMDBScraper(Scraper):
         except Exception as e:
             self.logger.exception(f"Exception: {e}")
             year = None
-        self.all_years.append(year)
         self.logger.info(f"Adding year: {year}")
 
-    def verify_lengths(self):
-        num_movies = len(self.all_links)
+        return year
 
-        def validate_data_length(*args):
-            for data_list, data_name in args:
-                if num_movies != len(data_list):
-                    self.logger.exception(f"Length of {data_name}: {len(data_list)}")
-                    return False
-            return True
+    def scrape_movie(self, link, movie_soup):
+        score = self.scrape_score(movie_soup)
+        title = self.scrape_title(movie_soup)
+        duration = self.scrape_duration(movie_soup)
+        director_name, actor_1_name, actor_2_name, actor_3_name = self.scrape_contributors(movie_soup)
+        num_reviews, num_critics, metascore = self.scrape_reviews(movie_soup)
+        num_votes = self.scrape_votes(movie_soup)
+        language = self.scrape_language(movie_soup)
+        budget = self.scrape_budget(movie_soup)
+        global_gross = self.scrape_gross(movie_soup)
+        year = self.scrape_year(movie_soup)
+        
+        new_row = {
+            'score': score,
+            'title': title,
+            'duration': duration,
+            'director_name': director_name,
+            'actor_1_name': actor_1_name,
+            'actor_2_name': actor_2_name,
+            'actor_3_name': actor_3_name,
+            'num_reviews': num_reviews,
+            'num_critics': num_critics,
+            'num_votes': num_votes,
+            'metascore': metascore,
+            'language': language,
+            'budget': budget,
+            'global_gross': global_gross,
+            'year': year,
+            'link': link
+        }
+        
+        self.movies_data.append(new_row)
 
-        return validate_data_length(
-            (self.all_scores, "scores"),
-            (self.all_titles, "titles"),
-            (self.all_durations, "durations"),
-            (self.all_director_names, "director names"),
-            (self.all_actor_1_names, "actor 1 names"),
-            (self.all_actor_2_names, "actor 2 names"),
-            (self.all_actor_3_names, "actor 3 names"),
-            (self.all_reviewed_users, "number of reviewed users"),
-            (self.all_reviewed_critics, "number of reviewed critics"),
-            (self.all_num_votes, "number of votes"),
-            (self.all_metascores, "metascores"),
-            (self.all_languages, "languages"),
-            (self.all_budgets, "budgets"),
-            (self.all_global_grosses, "global grosses"),
-            (self.all_years, "years"),
-        )
+    def get_movies_list_by_batch(self, current_batch, num_batches):
+        # Calculate the start and end numbers for the batch
+        start_num = current_batch * 50 - 49
+        end_num = current_batch * 50
 
-    def get_movies_list(self, num_batches):
-        for batch_number in range(1, num_batches + 1):
-            # Calculate the start and end numbers for the batch
-            start_num = batch_number * 50 - 49
-            end_num = batch_number * 50
+        # Get the response object
+        link = self.link.format(start_num, end_num)
+        response = request(method="GET", url=link, headers=self.headers, timeout=10)
+        soup = BeautifulSoup(response.text, "html.parser")
 
-            # Get the response object
-            link = self.link.format(start_num, end_num)
-            response = request(method="GET", url=link, headers=self.headers, timeout=10)
-            soup = BeautifulSoup(response.text, "html.parser")
+        # Extract movie ids and append to list
+        movie_ids = soup.find_all("li", class_="ipc-metadata-list-summary-item")
+        for i, movie_id in enumerate(movie_ids):
+            movie_ids[i] = movie_id.a["href"]
+        movie_ids = list(set(movie_ids))
+        self.list_movies.extend(movie_ids)
 
-            # Extract movie ids and append to list
-            movie_ids = soup.find_all("li", class_="ipc-metadata-list-summary-item")
-            for i, movie_id in enumerate(movie_ids):
-                movie_ids[i] = movie_id.a["href"]
-            movie_ids = list(set(movie_ids))
-            self.list_movies.extend(movie_ids)
+        self.logger.info(f"Batch {current_batch}/{num_batches}: {len(movie_ids)} movies")
 
-            self.logger.info(f"Batch {batch_number}/{num_batches}: {len(movie_ids)} movies")
+    def scrape_movies(self, num_movies):
+        num_batches = num_movies // 50 if num_movies % 50 == 0 else num_movies // 50 + 1
+        
+        start_idx = 0
+        end_idx = 0
+        
+        for batch_number in range(num_batches + 1):
+            self.logger.info(f"Scraping batch {batch_number + 1} of {num_batches} batches")
+            self.get_movies_list_by_batch(batch_number + 1, num_batches)
 
-        self.logger.info(f"Total number of movies scraped: {len(self.list_movies)}")
+            # For each movie take the link and scrape the data
+            count = 0
+            for movie in self.list_movies:
+                count += 1
+                self.logger.info(
+                    f"<======== Scraping movie {count} of {len(self.list_movies)} movies in batch {batch_number + 1} ========>"
+                )
+                # Get the link and fetch the movie page
+                link = self.site_url + movie
+                movie_response = request(method="GET", url=link, headers=self.headers, timeout=10)
+                if movie_response.status_code != 200:
+                    self.logger.warning(f"Status code is not 200, skipping movie: {link}")
+                    continue
+                self.logger.info(f"Status code: {movie_response.status_code}")
+                self.logger.info(f"Adding movie page: {link}")
 
-    def scrape_movies(self):
-        # For each movie take the link and scrape the data
-        count = 0
-        for movie in self.list_movies:
-            count += 1
-            self.logger.info(
-                f"<======== Scraping movie {count} of {len(self.list_movies)} movies ========>"
-            )
-            # Get the link and fetch the movie page
-            link = self.site_url + movie
-            movie_response = request(method="GET", url=link, headers=self.headers, timeout=10)
-            if movie_response.status_code != 200:
-                self.logger.warning(f"Status code is not 200, skipping movie: {link}")
-                continue
-            self.logger.info(f"Status code: {movie_response.status_code}")
-            self.all_links.append(link)
-            self.logger.info(f"Adding movie page: {link}")
+                # Parse the movie page
+                movie_soup = BeautifulSoup(movie_response.text, "html.parser")
+                self.scrape_movie(link, movie_soup)
+                self.append_csv(batch_number + 1)
 
-            # Parse the movie page
-            movie_soup = BeautifulSoup(movie_response.text, "html.parser")
-            self.scrape_movie_data(movie_soup)
+            start_idx = end_idx
+            end_idx = end_idx + count
 
-    def create_dataframe(self):
-        if self.verify_lengths():
-            self.logger.info(f"Creating dataframe")
-            df = pd.DataFrame(
-                {
-                    "score": self.all_scores,
-                    "title": self.all_titles,
-                    "duration": self.all_durations,
-                    "director_name": self.all_director_names,
-                    "actor_1_name": self.all_actor_1_names,
-                    "actor_2_name": self.all_actor_2_names,
-                    "actor_3_name": self.all_actor_3_names,
-                    "num_reviews": self.all_reviewed_users,
-                    "num_critics": self.all_reviewed_critics,
-                    "num_votes": self.all_num_votes,
-                    "metascore": self.all_metascores,
-                    "language": self.all_languages,
-                    "budget": self.all_budgets,
-                    "global_gross": self.all_global_grosses,
-                    "year": self.all_years,
-                    "link": self.all_links,
-                }
-            )
-            self.logger.info("Data scraping and dataframe creation completed.")
-            return df
-        else:
-            self.logger.error("Data scraping failed due to length mismatch.")
+            self.logger.info(f"Saving batch {batch_number + 1} of {num_batches} batches")
+            self.save_csv(start_idx, end_idx, batch_number + 1)
+            self.list_movies = []
 
-    def save_csv(self):
-        df = self.create_dataframe()
-        df.to_csv("data.csv", index=False)
-        self.logger.info("Dataframe saved to csv file successfully.")
+    def append_csv(self, batch_num):
+        self.logger.info(f"Appending movie {self.movies_data[-1]['title']} to batch {batch_num} csv")
+        try:
+            with open(f"data/batch_{batch_num}.csv", "a", newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=self.movies_data[-1].keys())
 
+                writer.writerow(self.movies_data[-1])
+        except:
+            with open(f"data/batch_{batch_num}.csv", "w", newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=self.movies_data[-1].keys())
 
+                writer.writeheader()
+                writer.writerow(self.movies_data[-1])
+
+    def create_df(self):
+        self.logger.info(f"Creating dataframe")
+        df = pd.DataFrame(self.movies_data)
+        return df
