@@ -273,7 +273,7 @@ class IMDBScraper(Scraper):
             overview_block = movie_soup.find(
                 "p", { "data-testid": "plot" }
             )
-            overview = overview_block.find_all("span")[0].text
+            overview = overview_block.find("span", { "data-testid": "plot-xl" }).text
         except:
             self.logger.warning(f"Overview not found")
             overview = None
@@ -333,22 +333,20 @@ class IMDBScraper(Scraper):
         movie_ids = list(set(movie_ids))
         self.list_movies.extend(movie_ids)
 
-        self.logger.info(f"Batch {current_batch}/{num_batches}: {len(movie_ids)} movies")
+        self.logger.info(f"Batch {current_batch}: {len(movie_ids)} movies")
 
     def scrape_movies(self, num_movies):
         num_batches = num_movies // 50 if num_movies % 50 == 0 else num_movies // 50 + 1
         
-        start_idx = 0
-        end_idx = 0
-        
         for batch_number in range(num_batches + 1):
-            self.logger.info(f"Scraping batch {batch_number + 1} of {num_batches} batches")
+            self.logger.info(f"Scraping batch {batch_number + 1}")
             self.get_movies_list_by_batch(batch_number + 1, num_batches)
 
             # For each movie take the link and scrape the data
             count = 0
             for movie in self.list_movies:
                 count += 1
+
                 self.logger.info(
                     f"<======== Scraping movie {count} of {len(self.list_movies)} movies in batch {batch_number + 1} ========>"
                 )
@@ -366,12 +364,13 @@ class IMDBScraper(Scraper):
                 self.scrape_movie(link, movie_soup)
                 self.append_csv(batch_number + 1)
 
-            start_idx = end_idx
-            end_idx = end_idx + count
+                if len(self.movies_data) == num_movies:
+                    break
 
-            self.logger.info(f"Saving batch {batch_number + 1} of {num_batches} batches")
-            self.save_csv(start_idx, end_idx, batch_number + 1)
+            self.logger.info(f"Finished scraping batch {batch_number + 1}")
             self.list_movies = []
+
+        self.logger.info(f"Finished scraping {num_movies} movies")
 
     def append_csv(self, batch_num):
         self.logger.info(f"Appending movie {self.movies_data[-1]['title']} to batch {batch_num} csv")
