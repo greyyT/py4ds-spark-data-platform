@@ -1,0 +1,4 @@
+locations:
+  - location_name: data_platform
+    code_source:
+      package_name: data_platform
