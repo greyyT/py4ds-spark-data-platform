@@ -1,0 +1,5 @@
+load_from:
+  - grpc_server:
+      host: pipeline_data_platform
+      port: 4000
+      location_name: "data_platform"
