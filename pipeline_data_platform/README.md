@@ -33,12 +33,3 @@ pytest data_platform_tests
 ```
 
 ## Deployment with spark cluster
-
-### Build docker images
-
-You need to build 2 images. One for dagster-webserver and dagster-daemon (both use the same image). And one for pipeline.
-
-```bash
-docker build -t dagster .
-docker build -t pipeline pipeline_data_platform
-```
