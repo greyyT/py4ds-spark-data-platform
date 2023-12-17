@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  pipeline_data_platform:
+    image: pipeline:latest
+    restart: on-failure
+    env_file: .env
+    networks:
+      - dagster_network
+    volumes:
+      - ./dagster_home/storage:/opt/dagster/dagster_home/storage
+
+  dagster_webserver:
+    container_name: dagster_webserver
+    image: dagster:latest
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "3000"
+      - -w
+      - workspace.yaml
+    ports:
+      - "3000:3000"
+    env_file: .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - dagster_network
+
+  dagster_daemon:
+    container_name: dagster_daemon
+    image: dagster:latest
+    entrypoint:
+      - dagster-daemon
+      - run
+    restart: on-failure
+    env_file: .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - dagster_network
+
+networks:
+  dagster_network:
+    driver: bridge
+    name: dagster_network
