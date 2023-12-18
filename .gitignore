@@ -152,3 +152,9 @@ cython_debug/
 # Others
 .vscode
 data/
+models/
+
+# Dagster
+dagster_home/compute_logs/
+dagster_home/logs/
+dagster_home/storage/
