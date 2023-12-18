@@ -3,15 +3,19 @@ storage:
     base_dir:
       env: SQLITE_STORAGE_BASE_DIR
 run_launcher:
-  module: dagster_docker
-  class: DockerRunLauncher
-  config:
-    env_vars:
-  network: dagster_network
-  container_kwargs:
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - dagster-data:/opt/dagster/dagster_home/storage
+  module: dagster.core.launcher
+  class: DefaultRunLauncher
+  # config:
+  #   env_vars:
+  #     - SQLITE_STORAGE_BASE_DIR
+  #     - DAGSTER_OVERALL_CONCURRENCY_LIMIT
+  #     - LOCAL_COMPUTE_LOG_MANAGER_DIRECTORY
+  #     - DAGSTER_LOCAL_ARTIFACT_STORAGE_DIR
+  #   network: dagster_network
+  #   container_kwargs:
+  #     volumes:
+  #       - /var/run/docker.sock:/var/run/docker.sock
+  #       - /var/tmp/dagster/storage:/opt/dagster/dagster_home/storage
 run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
@@ -19,7 +23,7 @@ run_coordinator:
     max_concurrent_runs:
       env: DAGSTER_OVERALL_CONCURRENCY_LIMIT
     dequeue_use_threads: true
-    dequeue_num_workers: 4
+    dequeue_num_workers: 8
 compute_logs:
   module: dagster.core.storage.local_compute_log_manager
   class: LocalComputeLogManager
@@ -36,9 +40,9 @@ telemetry:
   enabled: false
 code_servers:
   local_startup_timeout: 120
-auto_materialize:
-  run_tags:
-    is_auto_materialize: true
 scheduler:
   module: dagster.core.scheduler
   class: DagsterDaemonScheduler
+python_logs:
+  managed_python_loggers:
+    - data_platform.assets.scraper
