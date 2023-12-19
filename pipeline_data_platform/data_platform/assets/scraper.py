@@ -431,6 +431,63 @@ class IMDBScraper(Scraper):
 
         return self.movies_data
 
+    def scrape_comment(self, comment_soup, movie_id, is_positive):
+        # Get the comment
+        comments_list = []
+        try:
+            comments = comment_soup.find_all("div", class_=re.compile(r"text show-more__control(\s| clickable)?"))
+            for comment in comments:
+                comments_list.append([movie_id, comment.text, is_positive])
+        except Exception as e:
+            self.logger.exception(f"Exception: {e}")
+            comment = None
+        self.logger.debug(f"Adding {len(comments_list)} {'positive' if is_positive else 'negative'} comments for movie: {movie_id}")
+
+        return comments_list
+
+    def scrape_comments_by_id(self, movie_id):
+        # Get the link and fetch the movie page
+        comments_list = []
+
+        link = self.site_url + '/title/' + movie_id + '/reviews'
+        positive_link = link + '?sort=helpfulnessScore&dir=desc&ratingFilter=10'
+        negative_link = link + '?sort=helpfulnessScore&dir=asc&ratingFilter=1'
+
+        self.logger.debug(f"Fetching positive comments for movie: {link}")
+        movie_response = request(
+            method="GET", url=positive_link, headers=self.headers, timeout=10
+        )
+        if movie_response.status_code != 200:
+            self.logger.warning(f"Status code is not 200, skipping movie: {link}")
+            return None
+        self.logger.debug(f"Status code: {movie_response.status_code}")
+        self.logger.debug(f"Scraping positive comments for movie: {link}")
+
+        # Parse the movie page
+        comment_soup = BeautifulSoup(movie_response.text, "html.parser")
+        comments = self.scrape_comment(comment_soup, movie_id, True)
+
+        comments_list.extend(comments)
+
+        self.logger.debug(f"Fetching negative comments for movie: {link}")
+        movie_response = request(
+            method="GET", url=negative_link, headers=self.headers, timeout=10
+        )
+
+        if movie_response.status_code != 200:
+            self.logger.warning(f"Status code is not 200, skipping movie: {link}")
+            return None
+        self.logger.debug(f"Status code: {movie_response.status_code}")
+        self.logger.debug(f"Scraping negative comments for movie: {link}")
+
+        # Parse the movie page
+        comment_soup = BeautifulSoup(movie_response.text, "html.parser")
+        comments = self.scrape_comment(comment_soup, movie_id, False)
+
+        comments_list.extend(comments)
+
+        return comments_list
+
     def append_csv(self, batch_num):
         self.logger.info(
             f"Appending movie {self.movies_data[-1]['title']} to batch {batch_num} csv"
