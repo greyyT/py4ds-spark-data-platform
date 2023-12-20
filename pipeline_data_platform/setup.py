@@ -15,6 +15,10 @@ setup(
         "pendulum==2.1.2",
         "fastapi==0.105.0",
         "uvicorn==0.24.0.post1",
+        "jupyter",
+        "matplotlib",
+        "seaborn",
+        "nltk",
     ],
     extras_require={
         "dev": [
@@ -23,7 +27,6 @@ setup(
             "dagster-cloud",
             "plotly",
             "shapely",
-            "jupyter",
         ]
     },
 )

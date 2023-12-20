@@ -58,5 +58,10 @@ services:
 
 networks:
   dagster_network:
-    driver: bridge
     name: dagster_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: $SPARK_SUBNET
+          gateway: $SPARK_MASTER_IP
