@@ -409,6 +409,7 @@ class IMDBScraper(Scraper):
 
             # Get the link and fetch the movie page
             link = self.site_url + movie
+            movie_response = None
             try:
                 movie_response = request(
                     method="GET", url=link, headers=self.headers, timeout=60
@@ -417,9 +418,13 @@ class IMDBScraper(Scraper):
                 self.logger.warning("Connection refused by the server")
                 self.logger.info("Sleeping for 10 seconds...")
                 time.sleep(10)
+
+            if movie_response is None:
+                continue
             if movie_response.status_code != 200:
                 self.logger.warning(f"Status code is not 200, skipping movie: {link}")
                 continue
+
             self.logger.debug(f"Status code: {movie_response.status_code}")
             self.logger.debug(f"Adding movie page: {link}")
 
@@ -435,56 +440,59 @@ class IMDBScraper(Scraper):
         # Get the comment
         comments_list = []
         try:
-            comments = comment_soup.find_all("div", class_=re.compile(r"text show-more__control(\s| clickable)?"))
+            comments = comment_soup.find_all(
+                "div", class_=re.compile(r"text show-more__control(\s| clickable)?")
+            )
             for comment in comments:
                 comments_list.append([movie_id, comment.text, is_positive])
         except Exception as e:
             self.logger.exception(f"Exception: {e}")
             comment = None
-        self.logger.debug(f"Adding {len(comments_list)} {'positive' if is_positive else 'negative'} comments for movie: {movie_id}")
+        self.logger.debug(
+            f"Adding {len(comments_list)} {'positive' if is_positive else 'negative'} comments for movie: {movie_id}"
+        )
 
         return comments_list
 
-    def scrape_comments_by_id(self, movie_id):
+    def scrape_comments_by_id(self, movie_id: str) -> list:
         # Get the link and fetch the movie page
         comments_list = []
 
-        link = self.site_url + '/title/' + movie_id + '/reviews'
-        positive_link = link + '?sort=helpfulnessScore&dir=desc&ratingFilter=10'
-        negative_link = link + '?sort=helpfulnessScore&dir=asc&ratingFilter=1'
+        link = self.site_url + "/title/" + movie_id + "/reviews"
+        links = [
+            link + "?sort=helpfulnessScore&dir=asc&ratingFilter=1",  # Negative = 0
+            link + "?sort=helpfulnessScore&dir=desc&ratingFilter=10",  # Positive = 1
+        ]
 
-        self.logger.debug(f"Fetching positive comments for movie: {link}")
-        movie_response = request(
-            method="GET", url=positive_link, headers=self.headers, timeout=10
-        )
-        if movie_response.status_code != 200:
-            self.logger.warning(f"Status code is not 200, skipping movie: {link}")
-            return None
-        self.logger.debug(f"Status code: {movie_response.status_code}")
-        self.logger.debug(f"Scraping positive comments for movie: {link}")
+        for index, link in enumerate(links):
+            self.logger.debug(
+                f"Fetching {'positive' if index == 1 else 'negative'} comments for movie: {link}"
+            )
+            movie_response = None
+            try:
+                movie_response = request(
+                    method="GET", url=link, headers=self.headers, timeout=60
+                )
+            except Exception:
+                self.logger.warning("Connection refused by the server")
+                self.logger.info("Sleeping for 10 seconds...")
+                time.sleep(10)
 
-        # Parse the movie page
-        comment_soup = BeautifulSoup(movie_response.text, "html.parser")
-        comments = self.scrape_comment(comment_soup, movie_id, True)
+            if movie_response is None:
+                continue
 
-        comments_list.extend(comments)
+            if movie_response.status_code != 200:
+                self.logger.warning(f"Status code is not 200, skipping movie: {link}")
+                continue
 
-        self.logger.debug(f"Fetching negative comments for movie: {link}")
-        movie_response = request(
-            method="GET", url=negative_link, headers=self.headers, timeout=10
-        )
+            self.logger.debug(f"Status code: {movie_response.status_code}")
+            self.logger.debug(f"Scraping positive comments for movie: {link}")
 
-        if movie_response.status_code != 200:
-            self.logger.warning(f"Status code is not 200, skipping movie: {link}")
-            return None
-        self.logger.debug(f"Status code: {movie_response.status_code}")
-        self.logger.debug(f"Scraping negative comments for movie: {link}")
+            # Parse the movie page
+            comment_soup = BeautifulSoup(movie_response.text, "html.parser")
+            comments = self.scrape_comment(comment_soup, movie_id, index % 2)
 
-        # Parse the movie page
-        comment_soup = BeautifulSoup(movie_response.text, "html.parser")
-        comments = self.scrape_comment(comment_soup, movie_id, False)
-
-        comments_list.extend(comments)
+            comments_list.extend(comments)
 
         return comments_list
 
@@ -492,17 +500,9 @@ class IMDBScraper(Scraper):
         self.logger.info(
             f"Appending movie {self.movies_data[-1]['title']} to batch {batch_num} csv"
         )
-        try:
-            with open(f"data/batch_{batch_num}.csv", "a", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=self.movies_data[-1].keys())
-
-                writer.writerow(self.movies_data[-1])
-        except:
-            with open(f"data/batch_{batch_num}.csv", "w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=self.movies_data[-1].keys())
-
-                writer.writeheader()
-                writer.writerow(self.movies_data[-1])
+        with open(f"data/batch_{batch_num}.csv", "a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=self.movies_data[-1].keys())
+            writer.writerow(self.movies_data[-1])
 
     def create_df(self):
         self.logger.info(f"Creating dataframe")

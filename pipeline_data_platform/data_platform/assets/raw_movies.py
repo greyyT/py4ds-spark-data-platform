@@ -8,12 +8,22 @@ from ..partitions import batch_partition
 
 @asset(
     group_name="raw_files",
+    description="Scrape raw movie metadata from IMDB.com",
     partitions_def=batch_partition,
 )
 def movies(context: OpExecutionContext) -> Output[pd.DataFrame]:
+    """
+    Scrape raw movie metadata from IMDB.com
+
+    Parameters: None
+
+    Returns:
+    - Output[pd.DataFrame]: The pandas.DataFrame contains metadata of movies
+    in a batch_partition.
+    """
     current_batch = context.asset_partition_key_for_output().split("-")
     start_num, end_num = int(current_batch[0]), int(current_batch[1])
-    dest_dir = constants.MOVIES_FILE_PATH.format(start_num, end_num)
+    dest_dir = constants.MOVIES_FILE_PATH
 
     # Create folder directory if not exists
     if not os.path.exists(dest_dir):
