@@ -163,3 +163,4 @@ pipeline_data_platform/models
 dagster_home/.telemetry
 dagster_home/history
 dagster_home/schedules/schedules.db
+notebooks
