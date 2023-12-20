@@ -3,21 +3,24 @@ FROM python:3.8.10-slim
 # Checkout and install dagster libraries needed to run the gRPC server
 # exposing your repository to dagster-webserver and dagster-daemon, and to load the DagsterInstance
 
-# Setup java version
-ARG openjdk_version="17"
-
 # Install sqlite3 for storing logs
 RUN apt-get update \
-  && apt-get install sqlite3 net-tools iputils-ping -y \
-  && apt-get install --yes curl "openjdk-${openjdk_version}-jre-headless" ca-certificates-java procps \
+  && apt-get install curl wget sqlite3 net-tools iputils-ping -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
+
+# Setup java version
+RUN wget https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_linux-x64_bin.tar.gz \
+  && tar xvf openjdk-17+35_linux-x64_bin.tar.gz \
+  && mv jdk-17*/ /opt/jdk17 \
+  && export JAVA_HOME=/opt/jdk17 \
+  && export PATH="\$PATH:\$JAVA_HOME/bin"
 
 # Install spark
 RUN curl -O https://dlcdn.apache.org/spark/spark-3.5.0/spark-3.5.0-bin-hadoop3.tgz \
   && tar zxvf spark-3.5.0-bin-hadoop3.tgz \
   && mv spark-3.5.0-bin-hadoop3/ /usr/local/spark \
-  && rm -rf spark-3.5.0-bin-hadoop3.tgz
+  && rm spark-3.5.0-bin-hadoop3.tgz
 
 # Install necessary jars
 RUN curl -O https://repo1.maven.org/maven2/software/amazon/awssdk/s3/2.18.41/s3-2.18.41.jar \
