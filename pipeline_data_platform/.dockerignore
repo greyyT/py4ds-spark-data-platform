@@ -4,4 +4,6 @@ dagster_cloud.yaml
 
 data/
 models/
+IMDB_scraper/
 data_platform.egg-info/
+__pycache__/
