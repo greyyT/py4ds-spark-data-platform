@@ -9,14 +9,14 @@ from ..partitions import batch_partition
 
 @asset(
     group_name="raw_files",
-    description="Download pretrained comments from Google Drive.",
+    description="Download pretrained reviews from Google Drive.",
 )
-def pretrained_comments(context: OpExecutionContext):
+def pretrained_reviews(context: OpExecutionContext):
     """
-    Download the pretrained comments dataset from Google Drive.
+    Download the pretrained reviews dataset from Google Drive.
     """
-    file_id = constants.PRETRAINED_COMMENTS_FILE_ID
-    dest_dir = constants.PRETRAINED_COMMENTS_FILE_PATH
+    file_id = constants.PRETRAINED_REVIEWS_FILE_ID
+    dest_dir = constants.PRETRAINED_REVIEWS_FILE_PATH
 
     # Google drive download link
     url = f"https://drive.google.com/uc?id={file_id}"
