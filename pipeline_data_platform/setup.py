@@ -19,6 +19,7 @@ setup(
         "matplotlib",
         "seaborn",
         "nltk",
+        "wordcloud",
     ],
     extras_require={
         "dev": [
