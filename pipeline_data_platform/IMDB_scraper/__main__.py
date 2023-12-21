@@ -21,10 +21,12 @@ if __name__ == "__main__":
 
     num_batches = num_movies // 50 if num_movies % 50 == 0 else num_movies // 50 + 1
 
-    print(f"Okay, we'll scrape at least {num_batches} batch(es) for {num_movies} movies.")
+    print(
+        f"Okay, we'll scrape at least {num_batches} batch(es) for {num_movies} movies."
+    )
 
     scraper.scrape_movies(num_movies)
-    
+
     df = scraper.create_df()
     print(df.head())
     print(df.tail())

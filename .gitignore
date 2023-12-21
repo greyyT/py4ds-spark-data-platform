@@ -152,8 +152,15 @@ cython_debug/
 # Others
 .vscode
 data/
+models/
+
+# Dagster
+dagster_home/compute_logs/
+dagster_home/logs/
+dagster_home/storage/
 dagster_home/storage
 pipeline_data_platform/models
 dagster_home/.telemetry
 dagster_home/history
 dagster_home/schedules/schedules.db
+notebooks
