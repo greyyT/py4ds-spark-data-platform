@@ -1,10 +1,10 @@
-from dagster import MetadataValue, Optional, Output, asset, OpExecutionContext
+from dagster import asset, MetadataValue, OpExecutionContext
 import gdown, os, csv
 import pandas as pd
 
 from . import constants
-from .scraper import IMDBScraper
-from ..partitions import batch_partition
+from data_platform.partitions import batch_partition
+from data_platform.resources.scraper import IMDBScraper
 
 
 @asset(
@@ -38,7 +38,10 @@ def pretrained_reviews(context: OpExecutionContext):
     partitions_def=batch_partition,
     deps=["movies"],
 )
-def reviews(context: OpExecutionContext):
+def reviews(
+    context: OpExecutionContext,
+    IMDB_scraper: IMDBScraper,
+):
     """
     Scrape user's reviews about a movie from IMDB.com
     """
@@ -62,7 +65,7 @@ def reviews(context: OpExecutionContext):
             writer.writerow(["movie_id", "review", "is_positive"])
 
     # Start scraping
-    scraper = IMDBScraper()
+    scraper = IMDB_scraper
     scraper.logger.info("Starting IMDB scraper")
 
     movies_reviews_list = []

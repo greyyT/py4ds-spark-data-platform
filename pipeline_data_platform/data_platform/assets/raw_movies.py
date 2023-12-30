@@ -2,8 +2,8 @@ from dagster import asset, OpExecutionContext, MetadataValue, Output
 import pandas as pd, os
 
 from . import constants
-from .scraper import IMDBScraper
-from ..partitions import batch_partition
+from data_platform.partitions import batch_partition
+from data_platform.resources.scraper import IMDBScraper
 
 
 @asset(
@@ -11,7 +11,10 @@ from ..partitions import batch_partition
     description="Scrape raw movie metadata from IMDB.com",
     partitions_def=batch_partition,
 )
-def movies(context: OpExecutionContext) -> Output[pd.DataFrame]:
+def movies(
+    context: OpExecutionContext,
+    IMDB_scraper: IMDBScraper,
+) -> Output[pd.DataFrame]:
     """
     Scrape raw movie metadata from IMDB.com
 
@@ -30,7 +33,7 @@ def movies(context: OpExecutionContext) -> Output[pd.DataFrame]:
         os.makedirs(dest_dir)
 
     # Start scraping
-    scraper = IMDBScraper()
+    scraper = IMDB_scraper
     scraper.logger.info("Starting IMDB scraper")
 
     movies_list = scraper.scrape_movies_by_single_batch(start_num, end_num)
