@@ -436,7 +436,7 @@ class IMDBScraper(Scraper):
 
         return self.movies_data
 
-    def scrape_comment(self, comment_soup, movie_id, is_positive):
+    def scrape_comment(self, comment_soup: BeautifulSoup, movie_id: str, is_positive: bool) -> list:
         # Get the comment
         comments_list = []
         try:
@@ -495,6 +495,61 @@ class IMDBScraper(Scraper):
             comments_list.extend(comments)
 
         return comments_list
+
+    def scrape_thumbnail(self, movie_soup: BeautifulSoup) -> (str, str):
+        try:
+            thumbnail_block = movie_soup.find_all("div", {"data-testid": "hero-media__slate"})
+
+            # If the thumbnail block is empty, try to find the poster block
+            if len(thumbnail_block) == 0:
+                thumbnail_block = movie_soup.find_all("div", {"data-testid": "hero-media__poster"})
+
+            thumbnail_img = thumbnail_block[0].find("img")
+            thumbnail_link = thumbnail_img["src"]
+            thumbnail_alt = thumbnail_img["alt"]
+        except Exception as e:
+            self.logger.exception(f"Exception: {e}")
+            thumbnail_link = None
+            thumbnail_alt = None
+        self.logger.debug(f"Adding thumbnail link: {thumbnail_link}")
+        self.logger.debug(f"Adding thumbnail alt: {thumbnail_alt}")
+
+        return thumbnail_link, thumbnail_alt
+
+    def scrape_thumbnail_by_id(self, movie_id: str) -> dict:
+        link = self.site_url + "/title/" + movie_id
+
+        self.logger.debug(f"Fetching thumbnail for movie: {link}")
+        movie_response = None
+
+        try:
+            movie_response = request(
+                method="GET", url=link, headers=self.headers, timeout=60
+            )
+        except Exception:
+            self.logger.warning("Connection refused by the server")
+            self.logger.info("Sleeping for 10 seconds...")
+            time.sleep(10)
+
+        if movie_response is None:
+            return None, None
+
+        if movie_response.status_code != 200:
+            self.logger.warning(f"Status code is not 200, skipping movie: {link}")
+            return None, None
+
+        self.logger.debug(f"Status code: {movie_response.status_code}")
+        self.logger.debug(f"Scraping thumbnail for movie: {link}")
+
+        # Parse the movie page
+        movie_soup = BeautifulSoup(movie_response.text, "html.parser")
+        thumbnail_link, thumbnail_alt = self.scrape_thumbnail(movie_soup)
+        
+        return {
+            "id": movie_id,
+            "thumbnail_link": thumbnail_link,
+            "thumbnail_alt": thumbnail_alt
+        }
 
     def append_csv(self, batch_num):
         self.logger.info(
