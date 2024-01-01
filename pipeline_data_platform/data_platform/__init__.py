@@ -21,9 +21,8 @@ defs = Definitions(
     assets=[*review_assets, *movie_assets, *model_assets],
     resources={
         "IMDB_scraper": IMDBScraper,
-        "spark": PySparkResource(
+        "pyspark": PySparkResource(
             spark_config={
-                "spark.master": "spark://192.168.194.64:7077",
                 "spark.app.name": "pipeline",
                 "spark.executor.memory": "2g",
                 "spark.driver.memory": "2g",

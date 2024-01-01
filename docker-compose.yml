@@ -16,6 +16,8 @@ services:
     volumes:
       - ./storage/mysql_data:/var/lib/mysql
       - ./pipeline_data_platform/data:/tmp/data
+    networks:
+      - dagster_network
 
   pipeline_data_platform:
     container_name: pipeline
@@ -23,15 +25,22 @@ services:
     build:
       context: ./pipeline_data_platform
     restart: on-failure
+    ports:
+      - "4040:4040"
     env_file: .env
     environment:
       - JAVA_HOME=/opt/jdk17
       - PATH="/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/jdk17"
-    networks:
-      - dagster_network
     volumes:
       - ./pipeline_data_platform:/opt/dagster/app/pipeline_data_platform
       - ./dagster_home/storage:/opt/dagster/dagster_home/storage
+    networks:
+      - dagster_network
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    devices:
+      - "/dev/net/tun"
 
   dagster_webserver:
     container_name: dagster_webserver
@@ -79,8 +88,3 @@ networks:
   dagster_network:
     name: dagster_network
     driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: $SPARK_SUBNET
-          gateway: $SPARK_MASTER_IP
