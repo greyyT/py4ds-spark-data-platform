@@ -28,6 +28,13 @@ defs = Definitions(
                 "spark.driver.memory": "2g",
                 "spark.pyspark.python": "/usr/bin/python3",
                 "spark.pyspark.driver.python": "/usr/bin/python3",
+                "spark.jars": "/usr/local/spark/jars/delta-core_2.12-2.2.0.jar,\
+                                /usr/local/spark/jars/hadoop-aws-3.3.2.jar,\
+                                /usr/local/spark/jars/delta-storage-2.2.0.jar,\
+                                /usr/local/spark/jars/aws-java-sdk-1.12.367.jar,\
+                                /usr/local/spark/jars/s3-2.18.41.jar,\
+                                /usr/local/spark/jars/aws-java-sdk-bundle-1.11.1026.jar,\
+                                /usr/local/spark/jars/mysql-connector-java-8.0.22.jar",
             }
         ),
         "mysql_conn": MySQLResource(

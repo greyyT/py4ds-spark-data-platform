@@ -26,7 +26,7 @@ services:
       context: ./pipeline_data_platform
     restart: on-failure
     ports:
-      - "4040:4040"
+      - ":4040"
     env_file: .env
     environment:
       - JAVA_HOME=/opt/jdk17
