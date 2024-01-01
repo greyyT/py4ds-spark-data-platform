@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from dagster import ConfigurableResource, InitResourceContext
 from sqlalchemy import Connection, Engine, create_engine
 from pydantic import PrivateAttr
-import pandas as pd
+from pyspark.sql import DataFrame
 import logging
 
 
@@ -27,7 +27,7 @@ class MySQLResource(ConfigurableResource):
     _connection: Connection = PrivateAttr()
 
     @contextmanager
-    def yield_for_execution(self):
+    def yield_for_execution(self, context: InitResourceContext):
         conn_metadata = f"mysql://{self.username}:{self.password}@{self.db_host}:{self.port}/{self.database}"
         try:
             self._engine = create_engine(url=conn_metadata)
@@ -41,9 +41,3 @@ class MySQLResource(ConfigurableResource):
     def teardown_after_execution(self, context: InitResourceContext) -> None:
         self._connection.close()
         return super().teardown_after_execution(context)
-
-    def upsert(self, sql_stm: str):
-        # BUG: need to fix this
-        result = self._connection.execute(sql_stm)
-        for row in result:
-            logger.info(f"{row}")

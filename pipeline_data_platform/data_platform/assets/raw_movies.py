@@ -3,7 +3,7 @@ import pandas as pd, os
 
 from . import constants
 from data_platform.partitions import batch_partition
-from data_platform.resources.scraper import IMDBScraper
+from data_platform.resources.scraper import IMDBScraper, logger as scraper_logger
 
 
 @asset(
@@ -34,7 +34,7 @@ def movies(
 
     # Start scraping
     scraper = IMDB_scraper
-    scraper.logger.info("Starting IMDB scraper")
+    scraper_logger.info("Starting IMDB scraper")
 
     movies_list = scraper.scrape_movies_by_single_batch(start_num, end_num)
 
