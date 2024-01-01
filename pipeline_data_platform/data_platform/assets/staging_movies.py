@@ -30,4 +30,4 @@ def cleaned_movies(context: OpExecutionContext, spark: PySparkResource):
     context.log.info(f"Spark session: {spark}")
     context.log.info(f"Spark context: {sc}")
 
-    context.log.info(f"RDD: {sc.paralellize([1, 2, 3, 4]).collect()}")
+    context.log.info(f"RDD: {sc.parallelize([1, 2, 3, 4]).collect()}")

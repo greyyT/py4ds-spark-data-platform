@@ -4,7 +4,7 @@ import pandas as pd
 
 from . import constants
 from data_platform.partitions import batch_partition
-from data_platform.resources.scraper import IMDBScraper, logger as scraper_logger
+from data_platform.resources.scraper import IMDBScraper
 
 
 @asset(
@@ -37,7 +37,6 @@ def pretrained_reviews(context: OpExecutionContext):
     description="User's reviews about a movie",
     partitions_def=batch_partition,
     deps=["movies"],
-    compute_kind="Python",
 )
 def reviews(
     context: OpExecutionContext,
@@ -67,7 +66,7 @@ def reviews(
 
     # Start scraping
     scraper = IMDB_scraper
-    scraper_logger.info("Starting IMDB scraper")
+    scraper.logger.info("Starting IMDB scraper")
 
     movies_reviews_list = []
     for index, movie_id in enumerate(movie_ids):

@@ -271,13 +271,11 @@ class IMDBScraper(ConfigurableResource):
             thumbnail_block = movie_soup.find_all(
                 "div", {"data-testid": "hero-media__slate"}
             )
-
             # If the thumbnail block is empty, try to find the poster block
             if len(thumbnail_block) == 0:
                 thumbnail_block = movie_soup.find_all(
                     "div", {"data-testid": "hero-media__poster"}
                 )
-
             thumbnail_img = thumbnail_block[0].find("img")
             thumbnail_link = thumbnail_img["src"]
             thumbnail_alt = thumbnail_img["alt"]
