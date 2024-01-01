@@ -46,3 +46,4 @@ scheduler:
 python_logs:
   managed_python_loggers:
     - data_platform.assets.scraper
+    - data_platform.assets.mysql
