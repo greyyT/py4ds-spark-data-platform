@@ -3,46 +3,29 @@ from bs4 import BeautifulSoup
 from requests import request
 import re, logging, time
 
-
-class ScraperResource(ConfigurableResource):
-    def __init__(self, url, headers, link):
-        self.site_url = url
-        self.headers = headers
-        self.link = link
+from data_platform.assets import constants
 
 
-class IMDBScraper(ScraperResource):
-    HEADERS = {
-        "Accept-Language": "en-US, en;q=0.5",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36",
-    }
-    SITE_URL = "https://www.imdb.com"
-    LINK = (
-        "https://www.imdb.com/search/title/?adult=include&moviemeter={},{}&languages=en"
-    )
+# Configure logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter("[%(asctime)s - %(name)s - %(levelname)s] %(message)s")
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
 
-    def __init__(self):
-        super().__init__(self.SITE_URL, self.HEADERS, self.LINK)
 
-        # Configure logger
-        LOGGER = logging.getLogger(__name__)
-        LOGGER.setLevel(logging.DEBUG)
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "[%(asctime)s - %(name)s - %(levelname)s] %(message)s"
-        )
-        stream_handler.setFormatter(formatter)
-        LOGGER.addHandler(stream_handler)
-        self.logger = LOGGER
-
-        # Configure empty data lists
-        self.list_movies = []
-        self.movies_data = []
+class IMDBScraper(ConfigurableResource):
+    site_url: str = constants.SITE_URL
+    headers: dict = constants.HEADERS
+    link: str = constants.LINK
+    list_movies: list = []
+    movies_data: list = []
 
     def scrape_score(self, movie_soup):
         # Get the score
-        self.logger.debug("Getting score from movie page")
+        logger.debug("Getting score from movie page")
         try:
             score = (
                 movie_soup.find(
@@ -54,43 +37,43 @@ class IMDBScraper(ScraperResource):
             )
             score = float(score)
         except Exception as e:
-            self.logger.exception(f"Exception: {e}")
+            logger.exception(f"Exception: {e}")
             score = None
-        self.logger.debug(f"Added score successfully: {score}")
+        logger.debug(f"Added score successfully: {score}")
         return score
 
     def scrape_title(self, movie_soup):
         # Get the title
-        self.logger.debug("Getting title from movie page")
+        logger.debug("Getting title from movie page")
         try:
             title = movie_soup.find("h1").text
         except Exception as e:
-            self.logger.exception(f"Exception: {e}")
+            logger.exception(f"Exception: {e}")
             title = None
-        self.logger.debug(f"Adding title: {title}")
+        logger.debug(f"Adding title: {title}")
         return title
 
     def scrape_duration(self, movie_soup):
         # Get the duration
-        self.logger.debug("Getting duration from movie page")
+        logger.debug("Getting duration from movie page")
         try:
             metadata_inline = movie_soup.find_all("ul", class_="ipc-inline-list")[1]
             duration = metadata_inline.find_all("li")[-1].text
             time_pattern = re.compile(r"^(\d{1,2}h\s)?(\d{1,2}m)$")
             if time_pattern.match(duration):
-                self.logger.debug(f"Duration is valid: {duration}")
+                logger.debug(f"Duration is valid: {duration}")
             else:
                 duration = None
-                self.logger.warning(f"Duration is invalid: {duration}")
+                logger.warning(f"Duration is invalid: {duration}")
         except Exception as e:
-            self.logger.exception(f"Exception: {e}")
+            logger.exception(f"Exception: {e}")
             duration = None
-        self.logger.debug(f"Adding duration: {duration}")
+        logger.debug(f"Adding duration: {duration}")
         return duration
 
     def scrape_contributors(self, movie_soup):
         # Get the director, actor 1, actor 2, actor 3 names
-        self.logger.debug("Getting director and actor names from movie page")
+        logger.debug("Getting director and actor names from movie page")
         director_name, actor_1_name, actor_2_name, actor_3_name = "", "", "", ""
         try:
             cast_blocks = movie_soup.find_all(
@@ -113,16 +96,16 @@ class IMDBScraper(ScraperResource):
                     actor_2_name = block.find_all("a")[2].text
                     actor_3_name = block.find_all("a")[3].text
         except Exception as e:
-            self.logger.exception(f"Exception: {e}")
-        self.logger.debug(f"Adding director name: {director_name}")
-        self.logger.debug(f"Adding actor 1 name: {actor_1_name}")
-        self.logger.debug(f"Adding actor 2 name: {actor_2_name}")
-        self.logger.debug(f"Adding actor 3 name: {actor_3_name}")
+            logger.exception(f"Exception: {e}")
+        logger.debug(f"Adding director name: {director_name}")
+        logger.debug(f"Adding actor 1 name: {actor_1_name}")
+        logger.debug(f"Adding actor 2 name: {actor_2_name}")
+        logger.debug(f"Adding actor 3 name: {actor_3_name}")
         return director_name, actor_1_name, actor_2_name, actor_3_name
 
     def scrape_reviews(self, movie_soup):
         # Get the number of reviewed users, number of reviewed critics, metascore
-        self.logger.debug(
+        logger.debug(
             "Getting number of reviewed users, number of reviewed critics, metascore from movie page"
         )
         num_reviews, num_critics, metascore = None, None, None
@@ -145,15 +128,15 @@ class IMDBScraper(ScraperResource):
                 ):
                     metascore = block.find("span", class_="score").text
         except Exception as e:
-            self.logger.exception(f"Exception: {e}")
-        self.logger.debug(f"Adding number of reviewed users: {num_reviews}")
-        self.logger.debug(f"Adding number of reviewed critics: {num_critics}")
-        self.logger.debug(f"Adding metascore: {metascore}")
+            logger.exception(f"Exception: {e}")
+        logger.debug(f"Adding number of reviewed users: {num_reviews}")
+        logger.debug(f"Adding number of reviewed critics: {num_critics}")
+        logger.debug(f"Adding metascore: {metascore}")
         return num_reviews, num_critics, metascore
 
     def scrape_votes(self, movie_soup):
         # Get the number of votes
-        self.logger.debug("Getting number of votes from movie page")
+        logger.debug("Getting number of votes from movie page")
         try:
             num_votes = (
                 movie_soup.find(
@@ -165,28 +148,28 @@ class IMDBScraper(ScraperResource):
                 .text
             )
         except Exception as e:
-            self.logger.exception(f"Exception: {e}")
+            logger.exception(f"Exception: {e}")
             num_votes = None
-        self.logger.debug(f"Adding number of votes: {num_votes}")
+        logger.debug(f"Adding number of votes: {num_votes}")
         return num_votes
 
     def scrape_language(self, movie_soup):
         # Get the language
-        self.logger.debug("Getting language from movie page")
+        logger.debug("Getting language from movie page")
         try:
             language_block = movie_soup.find(
                 "li", attrs={"data-testid": "title-details-languages"}
             )
             language = language_block.find("a").text
         except Exception as e:
-            self.logger.exception(f"Exception: {e}")
+            logger.exception(f"Exception: {e}")
             language = None
-        self.logger.debug(f"Adding language: {language}")
+        logger.debug(f"Adding language: {language}")
         return language
 
     def scrape_budget(self, movie_soup):
         # Get the budget
-        self.logger.debug("Getting budget from movie page")
+        logger.debug("Getting budget from movie page")
         try:
             budget_block = movie_soup.find(
                 "li", attrs={"data-testid": "title-boxoffice-budget"}
@@ -196,17 +179,17 @@ class IMDBScraper(ScraperResource):
             )
             budget = budget_value_box.find("span").text
         except AttributeError:
-            self.logger.warning(f"Budget not found")
+            logger.warning(f"Budget not found")
             budget = None
         except Exception as e:
-            self.logger.exception(f"Exception: {e}")
+            logger.exception(f"Exception: {e}")
             budget = None
-        self.logger.debug(f"Adding budget: {budget}")
+        logger.debug(f"Adding budget: {budget}")
         return budget
 
     def scrape_gross(self, movie_soup):
         # Get the global gross
-        self.logger.debug("Getting global gross from movie page")
+        logger.debug("Getting global gross from movie page")
         try:
             global_gross_block = movie_soup.find(
                 "li", {"data-testid": "title-boxoffice-cumulativeworldwidegross"}
@@ -215,17 +198,17 @@ class IMDBScraper(ScraperResource):
                 "span", class_="ipc-metadata-list-item__list-content-item"
             ).text
         except AttributeError:
-            self.logger.warning(f"Global gross not found")
+            logger.warning(f"Global gross not found")
             gross = None
         except Exception as e:
-            self.logger.exception(f"Exception: {e}")
+            logger.exception(f"Exception: {e}")
             gross = None
-        self.logger.debug(f"Adding global gross: {gross}")
+        logger.debug(f"Adding global gross: {gross}")
         return gross
 
     def scrape_year(self, movie_soup):
         # Get the year
-        self.logger.debug("Getting year from movie page")
+        logger.debug("Getting year from movie page")
         try:
             metadata_inline = movie_soup.find_all("ul", class_="ipc-inline-list")[1]
             year = metadata_inline.find_all("li")[0].text
@@ -240,17 +223,17 @@ class IMDBScraper(ScraperResource):
             if metadata_inline.find_all("li")[0].text in TV_tags:
                 year = metadata_inline.find_all("li")[1].text
             # If the last character is not a digit, remove it
-            self.logger.debug(f"Year before: {year}")
+            logger.debug(f"Year before: {year}")
             while not year[-1].isdigit():
                 year = year[:-1]
             year = int(year[-4:])
         except ValueError:
-            self.logger.warning(f"Year not found")
+            logger.warning(f"Year not found")
             year = None
         except Exception as e:
-            self.logger.exception(f"Exception: {e}")
+            logger.exception(f"Exception: {e}")
             year = None
-        self.logger.debug(f"Adding year: {year}")
+        logger.debug(f"Adding year: {year}")
         return year
 
     def scrape_comment(self, comment_soup, movie_id, is_positive):
@@ -263,9 +246,9 @@ class IMDBScraper(ScraperResource):
             for comment in comments:
                 comments_list.append([movie_id, comment.text, is_positive])
         except Exception as e:
-            self.logger.exception(f"Exception: {e}")
+            logger.exception(f"Exception: {e}")
             comment = None
-        self.logger.debug(
+        logger.debug(
             f"Adding {len(comments_list)} {'positive' if is_positive else 'negative'} comments for movie: {movie_id}"
         )
 
@@ -273,15 +256,39 @@ class IMDBScraper(ScraperResource):
 
     def scrape_overview(self, movie_soup):
         # Get the overview
-        self.logger.debug("Getting overview from movie page")
+        logger.debug("Getting overview from movie page")
         try:
             overview_block = movie_soup.find("p", {"data-testid": "plot"})
             overview = overview_block.find("span", {"data-testid": "plot-xl"}).text
         except:
-            self.logger.warning(f"Overview not found")
+            logger.warning(f"Overview not found")
             overview = None
-        self.logger.debug(f"Adding overview: {overview}")
+        logger.debug(f"Adding overview: {overview}")
         return overview
+
+    def scrape_thumbnail(self, movie_soup: BeautifulSoup):
+        try:
+            thumbnail_block = movie_soup.find_all(
+                "div", {"data-testid": "hero-media__slate"}
+            )
+
+            # If the thumbnail block is empty, try to find the poster block
+            if len(thumbnail_block) == 0:
+                thumbnail_block = movie_soup.find_all(
+                    "div", {"data-testid": "hero-media__poster"}
+                )
+
+            thumbnail_img = thumbnail_block[0].find("img")
+            thumbnail_link = thumbnail_img["src"]
+            thumbnail_alt = thumbnail_img["alt"]
+        except Exception as e:
+            logger.exception(f"Exception: {e}")
+            thumbnail_link = None
+            thumbnail_alt = None
+        logger.debug(f"Adding thumbnail link: {thumbnail_link}")
+        logger.debug(f"Adding thumbnail alt: {thumbnail_alt}")
+
+        return thumbnail_link, thumbnail_alt
 
     def scrape_movie(self, link, movie_soup):
         score = self.scrape_score(movie_soup)
@@ -339,7 +346,7 @@ class IMDBScraper(ScraperResource):
         count = 0
         for movie in self.list_movies:
             count += 1
-            self.logger.info(
+            logger.info(
                 f"<======== Scraping movie {count} of {len(self.list_movies)} movies ========>"
             )
 
@@ -351,24 +358,24 @@ class IMDBScraper(ScraperResource):
                     method="GET", url=link, headers=self.headers, timeout=60
                 )
             except Exception:
-                self.logger.warning("Connection refused by the server")
-                self.logger.info("Sleeping for 10 seconds...")
+                logger.warning("Connection refused by the server")
+                logger.info("Sleeping for 10 seconds...")
                 time.sleep(10)
 
             if movie_response is None:
                 continue
             if movie_response.status_code != 200:
-                self.logger.warning(f"Status code is not 200, skipping movie: {link}")
+                logger.warning(f"Status code is not 200, skipping movie: {link}")
                 continue
 
-            self.logger.debug(f"Status code: {movie_response.status_code}")
-            self.logger.debug(f"Adding movie page: {link}")
+            logger.debug(f"Status code: {movie_response.status_code}")
+            logger.debug(f"Adding movie page: {link}")
 
             # Parse the movie page
             movie_soup = BeautifulSoup(movie_response.text, "html.parser")
             self.scrape_movie(link, movie_soup)
 
-            self.logger.info("Finished scraping this movie!")
+            logger.info("Finished scraping this movie!")
 
         return self.movies_data
 
@@ -383,7 +390,7 @@ class IMDBScraper(ScraperResource):
         ]
 
         for index, link in enumerate(links):
-            self.logger.debug(
+            logger.debug(
                 f"Fetching {'positive' if index == 1 else 'negative'} comments for movie: {link}"
             )
             movie_response = None
@@ -392,19 +399,19 @@ class IMDBScraper(ScraperResource):
                     method="GET", url=link, headers=self.headers, timeout=60
                 )
             except Exception:
-                self.logger.warning("Connection refused by the server")
-                self.logger.info("Sleeping for 10 seconds...")
+                logger.warning("Connection refused by the server")
+                logger.info("Sleeping for 10 seconds...")
                 time.sleep(10)
 
             if movie_response is None:
                 continue
 
             if movie_response.status_code != 200:
-                self.logger.warning(f"Status code is not 200, skipping movie: {link}")
+                logger.warning(f"Status code is not 200, skipping movie: {link}")
                 continue
 
-            self.logger.debug(f"Status code: {movie_response.status_code}")
-            self.logger.debug(f"Scraping positive comments for movie: {link}")
+            logger.debug(f"Status code: {movie_response.status_code}")
+            logger.debug(f"Scraping positive comments for movie: {link}")
 
             # Parse the movie page
             comment_soup = BeautifulSoup(movie_response.text, "html.parser")
@@ -413,3 +420,34 @@ class IMDBScraper(ScraperResource):
             comments_list.extend(comments)
 
         return comments_list
+
+    def scrape_thumbnail_by_id(self, movie_id: str) -> list:
+        link = self.site_url + "/title/" + movie_id
+
+        logger.debug(f"Fetching thumbnail for movie: {link}")
+        movie_response = None
+
+        try:
+            movie_response = request(
+                method="GET", url=link, headers=self.headers, timeout=60
+            )
+        except Exception:
+            logger.warning("Connection refused by the server")
+            logger.info("Sleeping for 10 seconds...")
+            time.sleep(10)
+
+        if movie_response is None:
+            return []
+
+        if movie_response.status_code != 200:
+            logger.warning(f"Status code is not 200, skipping movie: {link}")
+            return []
+
+        logger.debug(f"Status code: {movie_response.status_code}")
+        logger.debug(f"Scraping thumbnail for movie: {link}")
+
+        # Parse the movie page
+        movie_soup = BeautifulSoup(movie_response.text, "html.parser")
+        thumbnail_link, thumbnail_alt = self.scrape_thumbnail(movie_soup)
+
+        return [movie_id, thumbnail_link, thumbnail_alt]

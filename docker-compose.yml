@@ -1,18 +1,49 @@
 version: "3.9"
 
 services:
+  serving_database:
+    container_name: serving_database
+    image: mysql:8.0
+    volumes:
+      - ./storage/mysql_data:/var/lib/mysql
+      - ./pipeline_data_platform/data:/tmp/data
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_ALLOW_EMPTY_PASSWORD=1
+      - MYSQL_USER=app
+      - MYSQL_PASSWORD=null
+      - MYSQL_DATABASE=imdb
+    networks:
+      - dagster_network
+
   pipeline_data_platform:
     container_name: pipeline
     image: pipeline:latest
     build:
       context: ./pipeline_data_platform
     restart: on-failure
-    env_file: .env
-    networks:
-      - dagster_network
+    environment:
+      - JAVA_HOME=/opt/jdk17
+      - PATH="/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/jdk17"
+      - SQLITE_STORAGE_BASE_DIR=${SQLITE_STORAGE_BASE_DIR}
+      - DAGSTER_OVERALL_CONCURRENCY_LIMIT=${DAGSTER_OVERALL_CONCURRENCY_LIMIT}
+      - LOCAL_COMPUTE_LOG_MANAGER_DIRECTORY=${LOCAL_COMPUTE_LOG_MANAGER_DIRECTORY}
+      - DAGSTER_LOCAL_ARTIFACT_STORAGE_DIR=${DAGSTER_LOCAL_ARTIFACT_STORAGE_DIR}
+      - DAGSTER_CURRENT_IMAGE=${DAGSTER_CURRENT_IMAGE}
+      - SPARK_SUBNET=${SPARK_SUBNET}
+      - SPARK_MASTER_IP=${SPARK_MASTER_IP}
+      - SPARK_MASTER_URL=${SPARK_MASTER_URL}
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
     volumes:
       - ./pipeline_data_platform:/opt/dagster/app/pipeline_data_platform
       - ./dagster_home/storage:/opt/dagster/dagster_home/storage
+    networks:
+      - dagster_network
 
   dagster_webserver:
     container_name: dagster_webserver
@@ -63,5 +94,5 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: $SPARK_SUBNET
-          gateway: $SPARK_MASTER_IP
+        - subnet: ${SPARK_SUBNET}
+          gateway: ${SPARK_MASTER_IP}

@@ -45,4 +45,5 @@ scheduler:
   class: DagsterDaemonScheduler
 python_logs:
   managed_python_loggers:
-    - data_platform.assets.scraper
+    - data_platform.resources.scraper
+    - data_platform.resources.mysql
