@@ -62,7 +62,7 @@ def tf_idf(context: OpExecutionContext, pyspark: PySparkResource):
     df = data_tokens.groupBy("token").agg(F.countDistinct("title").alias("df"))
 
     def inverse_doc_frequency(doc_frequency):
-        return math.log((total_docs + 1) * 1.0 / (doc_frequency + 1))
+        return math.log((total_docs) * 1.0 / (doc_frequency))
 
     # Register inverse document frequency as a udf
     inverse_doc_frequency_udf = F.udf(inverse_doc_frequency, FloatType())
