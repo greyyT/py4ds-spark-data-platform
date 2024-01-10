@@ -13,14 +13,18 @@ setup(
         "pandas",
         "gdown",
         "pendulum==2.1.2",
-        "fastapi==0.105.0",
-        "uvicorn==0.24.0.post1",
         "jupyter",
         "matplotlib",
         "seaborn",
         "nltk",
+        # For the API
+        "fastapi==0.105.0",
+        "FastAPI-SQLAlchemy==0.2.1",
+        "uvicorn==0.24.0.post1",
+        "psycopg==3.1.16",
         "wordcloud",
         "elephas==5.0.0",
+        "pymysql==1.1.0",
     ],
     extras_require={
         "dev": [

@@ -142,13 +142,3 @@ def cleaned_movies(
         "Columns": MetadataValue.text(str(joined_df.columns)),
     }
     context.add_output_metadata(asset_metadata)
-
-
-@multi_asset(
-    group_name="staging",
-    outs={"train_movies": AssetOut(), "test_movies": AssetOut()},
-    deps=["cleaned_movies"],
-    compute_kind="PySpark",
-)
-def train_test_movies(context: OpExecutionContext):
-    pass
