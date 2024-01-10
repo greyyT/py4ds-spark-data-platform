@@ -164,6 +164,7 @@ dagster_home/.telemetry
 dagster_home/history
 dagster_home/schedules/schedules.db
 notebooks
-api/cnn_lstm.h5
-api/tokenizer.pkl
+model_api/cnn_lstm.h5
+model_api/tokenizer.pkl
 storage
+movies_api/postgres-data
