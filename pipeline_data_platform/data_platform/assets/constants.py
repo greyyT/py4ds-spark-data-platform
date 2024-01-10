@@ -2,9 +2,10 @@ PRETRAINED_REVIEWS_FILE_ID = "1tgMaRFG3C-bbr3uYny8N2R7wlrDwW9Pf"
 PRETRAINED_REVIEWS_FILE_PATH = "data/raw/pretrained_comments.csv"
 
 MOVIES_FILE_PATH = "data/raw/movies"
-STAGING_MOVIES_FILE_PATH = "data/staging/movies"
 REVIEWS_FILE_PATH = "data/raw/reviews"
 THUMBNAILS_FILE_PATH = "data/raw/thumbnails"
+STAGING_MOVIES_FILE_PATH = "data/staging/movies"
+MODEL_TFIDF_PATH = "data/model/tfidf"
 NUM_BATCHES = 1000
 
 HEADERS = {
