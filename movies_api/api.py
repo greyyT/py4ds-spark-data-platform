@@ -7,6 +7,22 @@ from database import get_db
 from models import Movie as ModelMovie
 from ml_models import search
 
+
+# create spark application
+print("Creating first spark app")
+spark = (
+    SparkSession.builder.appName("Movies")
+    .master("spark://192.168.194.64:7077")
+    .config("spark.executor.memory", "8g")
+    .getOrCreate()
+)
+sc = spark.sparkContext
+
+# read tfidf
+print("Loading tfidf")
+tfidf_path = "../pipeline_data_platform/data/model/tfidf.parquet"
+tfidf = spark.read.parquet(tfidf_path)
+
 app = FastAPI()
 
 origins = ["http://localhost:3000"]
@@ -19,20 +35,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# create spark application
-spark = (
-    SparkSession.builder.appName("SparkTFIDF")
-    .master("spark://192.168.194.64:7077")
-    .config("spark.executor.memory", "8g")
-    .getOrCreate()
-)
-
-sc = spark.sparkContext
-
-# read ifidf
-ifidf_path = "../pipeline_data_platform/data/model/tfidf.parquet"
-tfidf = spark.read.parquet(ifidf_path)
 
 
 @app.get("/")
@@ -75,7 +77,7 @@ def search_movie(q: str = Query(), db: Session = Depends(get_db)):
     movie_titles = search(spark, tfidf, q, 10)
 
     movies = []
-    
+
     for title in movie_titles:
         movie = db.query(ModelMovie).filter(ModelMovie.title == title).first()
         movies.append(movie)

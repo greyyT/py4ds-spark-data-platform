@@ -24,6 +24,7 @@ setup(
         "psycopg==3.1.16",
         "wordcloud",
         "elephas==5.0.0",
+        "pymysql==1.1.0",
     ],
     extras_require={
         "dev": [
