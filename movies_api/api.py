@@ -74,7 +74,7 @@ def get_movie(id: str, db: Session = Depends(get_db)):
 
 @app.get("/search")
 def search_movie(q: str = Query(), db: Session = Depends(get_db)):
-    movie_titles = search(spark, tfidf, q, 10)
+    movie_titles = search(spark, tfidf, q, 12)
 
     movies = []
 
