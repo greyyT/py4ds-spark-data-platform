@@ -17,8 +17,6 @@ engine = create_engine(
 Base = automap_base()
 Base.prepare(engine, reflect=True)
 
-Movies = Base.classes.movies
-
 def get_db():
     try:
         db = Session(engine)

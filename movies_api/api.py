@@ -3,9 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pyspark.sql import SparkSession
 
-from database import Movies, get_db
+from database import get_db
 from models import Movie as ModelMovie
-from schema import Movie as SchemaMovie
 from ml_models import search
 
 app = FastAPI()
@@ -46,9 +45,9 @@ def get_movies(
     page: int = Query(1), size: int = Query(20), db: Session = Depends(get_db)
 ):
     offset = (page - 1) * size
-    movies = db.query(Movies).offset(offset).limit(size).all()
+    movies = db.query(ModelMovie).offset(offset).limit(size).all()
 
-    total_records = db.query(Movies).count()
+    total_records = db.query(ModelMovie).count()
     total_pages = (
         total_records // size + 1
         if total_records % size != 0
@@ -66,13 +65,19 @@ def get_movies(
 
 @app.get("/movies/{id}")
 def get_movie(id: str, db: Session = Depends(get_db)):
-    movie = db.query(Movies).filter(Movies.movie_id == id).first()
+    movie = db.query(ModelMovie).filter(ModelMovie.movie_id == id).first()
 
     return movie
 
 
-@app.get("/movies/search")
-def search_movie(search_content: str, db: Session = Depends(get_db)):
-    movies = db.query(Movies).filter(Movies.title.like(f"%{search_content}%")).all()
+@app.get("/search")
+def search_movie(q: str = Query(), db: Session = Depends(get_db)):
+    movie_titles = search(spark, tfidf, q, 10)
+
+    movies = []
+    
+    for title in movie_titles:
+        movie = db.query(ModelMovie).filter(ModelMovie.title == title).first()
+        movies.append(movie)
 
     return movies
