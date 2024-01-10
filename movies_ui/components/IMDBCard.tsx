@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import { BsChevronDown, BsFillPlayFill } from 'react-icons/bs';
 import FavoriteButton from './FavoriteButton';
-import { formatTime } from '@/lib/formatTime';
+import { formatTime } from '@/utils/formatTime';
 
 interface IMDBCardProps {
   movie: Record<string, any>;

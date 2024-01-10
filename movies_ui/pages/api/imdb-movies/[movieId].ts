@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-import prismadb from '@/lib/prismadb';
-import serverAuth from '@/lib/serverAuth';
+import prismadb from '@/utils/prismadb';
+import serverAuth from '@/utils/serverAuth';
 import axios from 'axios';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

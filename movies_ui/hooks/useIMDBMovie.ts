@@ -1,5 +1,5 @@
 import useSWR from 'swr';
-import fetcher from '@/lib/fetcher';
+import fetcher from '@/utils/fetcher';
 
 const useIMDBMovie = (id?: string) => {
   const { data, error, isLoading } = useSWR(id ? `/api/imdb-movies/${id}` : null, fetcher, {
