@@ -6,6 +6,7 @@ import { AiOutlineArrowLeft } from 'react-icons/ai';
 import Head from 'next/head';
 import Navbar from '@/components/Navbar';
 import MovieList from '@/components/MoveList';
+import { formatTime } from '@/utils/formatTime';
 
 const Watch = () => {
   const router = useRouter();
@@ -25,7 +26,7 @@ const Watch = () => {
             <div className="ml-16 flex flex-col gap-4">
               <h1 className="text-white text-6xl font-bold">{movie?.title}</h1>
               <p className="text-[#a3a3a3] text-sm leading-5">
-                {movie?.year} | {movie?.duration}
+                {movie?.year} | {formatTime(movie?.duration)}
               </p>
               <p className="text-white">{movie?.overview}</p>
               <p className="text-white">

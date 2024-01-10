@@ -8,36 +8,36 @@ import Navbar from '@/components/Navbar';
 import MovieList from '@/components/MoveList';
 import axios from 'axios';
 
-const Watch = () => {
+export async function getServerSideProps(context: any) {
+  try {
+    const q = context.query?.q || '';
+
+    const response = await axios.get('http://localhost:8000/search', {
+      params: {
+        q,
+      },
+    });
+
+    const movies = response.data;
+
+    return {
+      props: {
+        movies,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return {
+      props: {
+        movies: [],
+      },
+    };
+  }
+}
+
+const Search = ({ movies }: { movies: any }) => {
   const router = useRouter();
   const { q } = router.query;
-
-  const [movies, setMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (!q) return;
-
-    const fetchMovies = async () => {
-      setIsLoading(true);
-
-      try {
-        const response = await axios.get('http://localhost:8000/search', {
-          params: {
-            q,
-          },
-        });
-
-        setMovies(response.data);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMovies();
-  }, [q]);
 
   return (
     <>
@@ -52,4 +52,4 @@ const Watch = () => {
   );
 };
 
-export default Watch;
+export default Search;

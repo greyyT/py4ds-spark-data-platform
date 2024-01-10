@@ -16,6 +16,9 @@ const NavbarSearch: React.FC = (): JSX.Element => {
 
     if (searchContent.trim() === '') return;
 
+    setShowSearch(false);
+    setSearchContent('');
+
     router.push(`/search?q=${searchContent}`);
   };
 
@@ -32,9 +35,8 @@ const NavbarSearch: React.FC = (): JSX.Element => {
         value={searchContent}
         onChange={(ev) => setSearchContent(ev.target.value)}
         name="imdb-search"
-        className={`bg-transparent border border-solid border-white rounded-[4px] py-1 pr-3 pl-10 outline-none z-50 ${
-          showSearch ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        } transition w-96`}
+        className={`bg-transparent border border-solid border-white rounded-[4px] py-1 pr-3 pl-10 outline-none z-50 ${showSearch ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          } transition w-96`}
       />
       <BsSearch
         onClick={(ev: any) => {
@@ -42,9 +44,8 @@ const NavbarSearch: React.FC = (): JSX.Element => {
           setShowSearch(true);
           inputRef.current?.focus();
         }}
-        className={`absolute ${
-          showSearch ? 'left-3' : 'left-full -translate-x-full'
-        }  transition-[left] duration-300 top-1/2 -translate-y-1/2 z-50`}
+        className={`absolute ${showSearch ? 'left-3' : 'left-full -translate-x-full'
+          }  transition-[left] duration-300 top-1/2 -translate-y-1/2 z-50`}
       />
       {showSearch && (
         <IoMdClose
